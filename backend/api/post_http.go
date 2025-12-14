@@ -120,13 +120,14 @@ func postLogin(db *sql.DB) http.HandlerFunc{
 				return 
 			}
 
-			if storedPassword != request.Password{
-				http.Error(w, "Invalid password", http.StatusUnauthorized)
-				fmt.Println("Invalid password")
-				return 
-			}
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Login successful"))
+			
 		}
+		if storedPassword != request.Password{
+			http.Error(w, "Invalid password", http.StatusUnauthorized)
+			fmt.Println("Invalid password")
+			return 
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Login successful"))
 	}
 }
