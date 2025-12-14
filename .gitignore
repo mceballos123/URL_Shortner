@@ -1,0 +1,6 @@
+.env
+go.mod
+go.sum
+backend/migrations
+DS_Store
+README.md
