@@ -40,5 +40,5 @@ func ConnectDB() *sql.DB{
 	}else{
 		log.Println("Pinged the database successfully")
 	}
-	return db
+	return db 
 }
