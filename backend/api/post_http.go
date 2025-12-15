@@ -98,6 +98,7 @@ func postLogin(db *sql.DB) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request){
 		var request LoginRequest
 		err := json.NewDecoder(r.Body).Decode(&request)
+		// Stores the request body in the request memory adress
 
 		if err != nil{
 			fmt.Println("Error decoding request body:", err)
@@ -107,7 +108,8 @@ func postLogin(db *sql.DB) http.HandlerFunc{
 
 		var storedPassword string
 		query :=`SELECT password FROM users WHERE username=$1`
-		err = db.QueryRow(query, request.Username).Scan(&storedPassword)
+		err = db.QueryRow(query, request.Username).Scan(&storedPassword) 
+		// Scaqns the query results into the storedPassword
 
 		if err !=nil{
 			if err == sql.ErrNoRows{
@@ -127,7 +129,7 @@ func postLogin(db *sql.DB) http.HandlerFunc{
 			fmt.Println("Invalid password")
 			return 
 		}
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusOK) // 200 OK
 		w.Write([]byte("Login successful"))
 	}
 }
