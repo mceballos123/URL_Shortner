@@ -2,9 +2,9 @@ package api
 import (
 	"fmt"
 	"time"
-	"encoding/json"
 	"database/sql"
 	"net/http"
+	"github.com/gin-gonic/gin"
 )
 
 type CreateUrlRequest struct{
@@ -25,16 +25,16 @@ type LoginRequest struct{
 }
 
 
-func postCreateUrl( db *sql.DB) http.HandlerFunc{
-	return func(w http.ResponseWriter, r *http.Request){ // r is thge request body
+func PostCreateUrl( db *sql.DB) gin.HandlerFunc{
+	return func(c *gin.Context){ // r is thge request body
 		// w is the response writer, it is used to write the response to the client
 		var request CreateUrlRequest
-		err := json.NewDecoder(r.Body).Decode(&request) //Maps json to struct
+		err := c.ShouldBindJSON(&request) //Maps json to struct
 		//This takes the request body and decodes it into the request struct
 
 		if err != nil{
 			fmt.Println("Error decoding request body:", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return 
 		}
 		fmt.Println("Request body decoded successfully")
@@ -46,27 +46,26 @@ func postCreateUrl( db *sql.DB) http.HandlerFunc{
 
 		if err !=nil{
 			fmt.Println("Error executing query:", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return 
 		}
 		fmt.Println("URL created successfully") // 
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("URL created"))
+		c.JSON(http.StatusCreated, gin.H{"message": "URL created successfully"})
 
 	}
 
 }
 
-func postCreateUser(db *sql.DB) http.HandlerFunc{ //Function type for HTTP routes
-	return func(w http.ResponseWriter, r *http.Request){ //HTTP Handler function
+func PostCreateUser(db *sql.DB) gin.HandlerFunc{ //Function type for HTTP routes
+	return func(c *gin.Context){ //HTTP Handler function
 
 		var request CreateUserRequest
 
-		err := json.NewDecoder(r.Body).Decode(&request)
+		err := c.ShouldBind(&request)
 
 		if err!=nil{
 			fmt.Println("Error decoding request body:", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, gin.H{"error":err.Error()})
 			return 
 		}
 		fmt.Println("Request body decoded successfully")
@@ -81,28 +80,27 @@ func postCreateUser(db *sql.DB) http.HandlerFunc{ //Function type for HTTP route
 
 		if err !=nil{
 			fmt.Println("Error executing query:", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			c.JSON(http.StatusBadRequest, gin.H{"error":err.Error()})
 			return 
 		}else{
 			fmt.Println("User created successfully")
 		}
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("User created"))
+		c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 
 	}
 
 
 }
 
-func postLogin(db *sql.DB) http.HandlerFunc{
-	return func(w http.ResponseWriter, r *http.Request){
+func PostLogin(db *sql.DB) gin.HandlerFunc{
+	return func(c *gin.Context){
 		var request LoginRequest
-		err := json.NewDecoder(r.Body).Decode(&request)
+		err := c.BindJSON(&request)
 		// Stores the request body in the request memory adress
 
 		if err != nil{
 			fmt.Println("Error decoding request body:", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return 
 		}
 
@@ -114,22 +112,21 @@ func postLogin(db *sql.DB) http.HandlerFunc{
 		if err !=nil{
 			if err == sql.ErrNoRows{
 				fmt.Println("User not found")
-				http.Error(w, "User not found", http.StatusNotFound)
+				c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 				return 
 			}else{
 				fmt.Println("Error querying database:", err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return 
 			}
 
 			
 		}
 		if storedPassword != request.Password{
-			http.Error(w, "Invalid password", http.StatusUnauthorized)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
 			fmt.Println("Invalid password")
 			return 
 		}
-		w.WriteHeader(http.StatusOK) // 200 OK
-		w.Write([]byte("Login successful"))
+		c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 	}
 }

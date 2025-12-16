@@ -2,9 +2,9 @@ package api
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/http"
+	"github.com/gin-gonic/gin"
 	"strconv"
 	"time"
 )
@@ -24,14 +24,14 @@ type Username struct{
 }
 
 
-func getAllUrls( db *sql.DB) http.HandlerFunc{
-	return func(w http.ResponseWriter, r *http.Request){
+func GetAllUrls( db *sql.DB) gin.HandlerFunc{
+	return func(c *gin.Context){
 		query := `SELECT * FROM urls` //Selects the user
 		rows, err := db.Query(query)
 
 		if err !=nil{
 			fmt.Println("Error querying database:", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return 
 		}
 		defer rows.Close() // Schedules the rows to be closed when the function returns
@@ -41,26 +41,26 @@ func getAllUrls( db *sql.DB) http.HandlerFunc{
 			var u Url 
 			err := rows.Scan(&u.Id, &u.Alias, &u.Url, &u.ExpiresAt, &u.UserId)
 			if err !=nil{
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return 
 			}
 			urls = append(urls, u)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(urls)
+		c.JSON(http.StatusOK, urls)
+		
 	}
 }
 
 
-func getAllUsers(db *sql.DB) http.HandlerFunc{
-	return func(w http.ResponseWriter, r *http.Request){
+func GetAllUsers(db *sql.DB) gin.HandlerFunc{
+	return func(c *gin.Context){
 		query := `SELECT * FROM users`
 		rows, err := db.Query(query)
 
 		if err !=nil {
 			fmt.Println("Error querying database:", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return 
 		}
 		defer rows.Close() // Schedules the row to close when the function returns
@@ -70,29 +70,28 @@ func getAllUsers(db *sql.DB) http.HandlerFunc{
 			var u Username
 			err := rows.Scan(&u.Id, &u.Username, &u.Password)
 			if err !=nil{
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return 
 			}
 			users = append(users, u)
 		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(users)
+		c.JSON(http.StatusOK, users)
 		
 	}
 }
 
-func getUrlsByID(db *sql.DB) http.HandlerFunc{
-	return func(w http.ResponseWriter, r *http.Request){
-		idStr := r.URL.Query().Get("id")
+func GetUrlsByID(db *sql.DB) gin.HandlerFunc{
+	return func(c *gin.Context){
+		idStr := c.Query("id")
 		if idStr == ""{
-			http.Error(w, "ID is required", http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ID is required"})
 			return 
 		}
 		id, err := strconv.Atoi(idStr)
 
 		if err !=nil{
 			fmt.Println("Error converting the id to an integer:", err)
-			http.Error(w, "Invalid id parameter", http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter"})
 			return
 		}
 		var u Url
@@ -103,32 +102,31 @@ func getUrlsByID(db *sql.DB) http.HandlerFunc{
 
 		if err !=nil{
 			if err == sql.ErrNoRows{
-				http.Error(w, "URL not found", http.StatusNotFound)
+				c.JSON(http.StatusNotFound, gin.H{"error": "URL not found"})
 				return
 			}else{
 				fmt.Println("Error querying database:", err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(u)
+		c.JSON(http.StatusOK, u)
 	}
 }
 
-func getUserByID(db *sql.DB) http.HandlerFunc{
-	return func(w http.ResponseWriter, r *http.Request){
-		idStr := r.URL.Query().Get("id")
+func GetUserByID(db *sql.DB) gin.HandlerFunc{
+	return func(c *gin.Context){
+		idStr := c.Query("id")
 		if idStr == ""{
-			http.Error(w, "ID is required", http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ID is required"})
 			return 
 		}
 		id, err := strconv.Atoi(idStr)
 		
 		if err !=nil{
 			fmt.Println("Error converting the id to an integer:", err)
-			http.Error(w, "Invalid id parameter", http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter"})
 			return
 		}
 		var u Username
@@ -139,13 +137,12 @@ func getUserByID(db *sql.DB) http.HandlerFunc{
 
 		if err !=nil{
 			if err == sql.ErrNoRows{
-				http.Error(w, "User not found", http.StatusNotFound)
+				c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 				return
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(u)
+		c.JSON(http.StatusOK, u)
 	}
 
 }
