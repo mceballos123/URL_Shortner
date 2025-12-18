@@ -17,7 +17,7 @@ COPY . .
 RUN go build -o main ./backend/main.go # Build the go app from the main.go file
 
 #Use a smaller image as a runtime stage
-FROM alphine:latest
+FROM alpine:latest
 
 #Set the working directory in the container
 WORKDIR /backend
