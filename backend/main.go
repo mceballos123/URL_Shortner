@@ -8,10 +8,8 @@ import (
 )
 
 func main(){
-	router := gin.Default()
+	router := gin.New()
 	db:= db.ConnectDB()
-
-	
 
 	router.POST("/create-url",api.PostCreateUrl(db))
 	router.POST("/create-user",api.PostCreateUser(db))
