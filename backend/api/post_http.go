@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"net/http"
 	"github.com/gin-gonic/gin"
-
 )
-
 type CreateUrlRequest struct{
 	Alias string `json:"alias" binding:"required"`
 	Link string `json:"link" binding:"required"`
@@ -43,7 +41,7 @@ func PostCreateUrl( db *sql.DB) gin.HandlerFunc{
 		query := `INSERT INTO urls (alias, url, expires_at, user_id)
 		VALUES ($1, $2, $3, $4)
 		`
-		_, err = db.Exec(query, request.Alias, request.Link, request.ExpiredAt)
+		_, err = db.Exec(query, request.Alias, request.Link, request.ExpiredAt, request.UserId)
 
 		if err !=nil{
 			fmt.Println("Error executing query:", err)
@@ -87,10 +85,7 @@ func PostCreateUser(db *sql.DB) gin.HandlerFunc{ //Function type for HTTP routes
 			fmt.Println("User created successfully")
 		}
 		c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
-
 	}
-
-
 }
 
 func PostLogin(db *sql.DB) gin.HandlerFunc{
@@ -98,7 +93,6 @@ func PostLogin(db *sql.DB) gin.HandlerFunc{
 		var request LoginRequest
 		err := c.BindJSON(&request)
 		// Stores the request body in the request memory adress
-
 		if err != nil{
 			fmt.Println("Error decoding request body:", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -120,8 +114,6 @@ func PostLogin(db *sql.DB) gin.HandlerFunc{
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return 
 			}
-
-			
 		}
 		if storedPassword != request.Password{
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})

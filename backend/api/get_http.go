@@ -1,5 +1,4 @@
 package api
-
 import (
 	"database/sql"
 	"fmt"
@@ -8,7 +7,6 @@ import (
 	"strconv"
 	"time"
 )
-
 type Url struct{
 	Id int `json:"id"`
 	Alias string `json:"alias"`
@@ -16,13 +14,11 @@ type Url struct{
 	ExpiresAt time.Time `json:"expires_at"`
 	UserId int `json:"user_id"`
 }
-
 type Username struct{
 	Id int `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
-
 
 func GetAllUrls( db *sql.DB) gin.HandlerFunc{
 	return func(c *gin.Context){
@@ -46,12 +42,10 @@ func GetAllUrls( db *sql.DB) gin.HandlerFunc{
 			}
 			urls = append(urls, u)
 		}
-
 		c.JSON(http.StatusOK, urls)
 		
 	}
 }
-
 
 func GetAllUsers(db *sql.DB) gin.HandlerFunc{
 	return func(c *gin.Context){
@@ -76,7 +70,6 @@ func GetAllUsers(db *sql.DB) gin.HandlerFunc{
 			users = append(users, u)
 		}
 		c.JSON(http.StatusOK, users)
-		
 	}
 }
 
@@ -110,7 +103,6 @@ func GetUrlsByID(db *sql.DB) gin.HandlerFunc{
 				return
 			}
 		}
-
 		c.JSON(http.StatusOK, u)
 	}
 }
@@ -141,8 +133,43 @@ func GetUserByID(db *sql.DB) gin.HandlerFunc{
 				return
 			}
 		}
-
 		c.JSON(http.StatusOK, u)
 	}
+}
 
+func RedirectShortUrl(db *sql.DB) gin.HandlerFunc{
+	return func(c  *gin.Context){
+		alias := c.Param("alias") // When the user visits /google it will take them to google.com
+
+		if alias == "" {
+			fmt.Println("Alias is either incorrect or user didn't insert a alias")
+			c.JSON(http.StatusBadRequest, gin.H{"error":"Alias is required"})
+			return
+		}
+
+		query := `SELECT url, expires_at FROM WHERE alias =$1`
+
+		var fullUrl string
+		var expiresAt sql.NullTime
+		err := db.QueryRow(query,alias).Scan(&fullUrl, &expiresAt)
+
+		if err != nil{
+			if err == sql.ErrNoRows{
+				c.JSON(http.StatusNotFound, gin.H{"error":err})
+				return 
+			}else{
+				fmt.Println("Error with quering the db: ", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return 
+			}
+		}
+		
+		if expiresAt.Valid && time.Now().After(expiresAt.Time){
+			c.JSON(http.StatusGone, gin.H{"error":"This short URL has expired"})
+			return
+		}
+
+		c.Redirect(http.StatusTemporaryRedirect,fullUrl)
+		
+	}
 }
