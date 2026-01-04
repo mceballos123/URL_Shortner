@@ -19,6 +19,7 @@ func main(){
 	router.GET("/urls/:id",api.GetUrlsByID(db))
 	router.GET("/users",api.GetAllUsers(db))
 	router.GET("/users/:id",api.GetUserByID(db))
+	router.GET("/urls/:alias", api.RedirectShortUrl(db))
 
 	router.Run(":8080")
 }

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"net/http"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 type CreateUrlRequest struct{
 	Alias string `json:"alias" binding:"required"`
@@ -70,12 +71,20 @@ func PostCreateUser(db *sql.DB) gin.HandlerFunc{ //Function type for HTTP routes
 		fmt.Println("Request body decoded successfully")
 		fmt.Println("Username:", request.Username)
 		fmt.Println("Password:", request.Password)
+		
+		hashedPassword, err :=bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+
+		if err!= nil{
+			fmt.Println("Error hashing password: ", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"Error: ": "Failed to process password"})
+			return 
+		}
 
 		query := `INSERT INTO users (username,password)
 		VALUES ($1,$2)
 		
 		`
-		_, err = db.Exec(query, request.Username, request.Password)
+		_, err = db.Exec(query, request.Username, string(hashedPassword))
 
 		if err !=nil{
 			fmt.Println("Error executing query:", err)
@@ -115,10 +124,13 @@ func PostLogin(db *sql.DB) gin.HandlerFunc{
 				return 
 			}
 		}
-		if storedPassword != request.Password{
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
+
+		err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(request.Password))
+
+		if err != nil{
+			c.JSON(http.StatusUnauthorized, gin.H{"error":"Invalid password"})
 			fmt.Println("Invalid password")
-			return 
+			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 	}
