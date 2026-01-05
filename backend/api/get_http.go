@@ -1,17 +1,18 @@
 package api
 import (
 	"database/sql"
-	"fmt"
+	
 	"net/http"
 	"github.com/gin-gonic/gin"
 	"strconv"
 	"time"
 )
+
 type Url struct{
 	Id int `json:"id"`
 	Alias string `json:"alias"`
 	Url string `json:"url"`
-	ExpiresAt time.Time `json:"expires_at"`
+	ExpiresAt sql.NullTime `json:"expired_at"`
 	UserId int `json:"user_id"`
 }
 type Username struct{
@@ -22,15 +23,14 @@ type Username struct{
 
 func GetAllUrls( db *sql.DB) gin.HandlerFunc{
 	return func(c *gin.Context){
-		query := `SELECT * FROM urls` //Selects the user
+		query := `SELECT * FROM urls`
 		rows, err := db.Query(query)
 
 		if err !=nil{
-			fmt.Println("Error querying database:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return 
 		}
-		defer rows.Close() // Schedules the rows to be closed when the function returns
+		defer rows.Close()
 
 		var urls []Url
 		for rows.Next(){
@@ -53,11 +53,10 @@ func GetAllUsers(db *sql.DB) gin.HandlerFunc{
 		rows, err := db.Query(query)
 
 		if err !=nil {
-			fmt.Println("Error querying database:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return 
 		}
-		defer rows.Close() // Schedules the row to close when the function returns
+		defer rows.Close()
 
 		var users []Username
 		for rows.Next(){
@@ -83,7 +82,6 @@ func GetUrlsByID(db *sql.DB) gin.HandlerFunc{
 		id, err := strconv.Atoi(idStr)
 
 		if err !=nil{
-			fmt.Println("Error converting the id to an integer:", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter"})
 			return
 		}
@@ -98,7 +96,6 @@ func GetUrlsByID(db *sql.DB) gin.HandlerFunc{
 				c.JSON(http.StatusNotFound, gin.H{"error": "URL not found"})
 				return
 			}else{
-				fmt.Println("Error querying database:", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
@@ -117,7 +114,6 @@ func GetUserByID(db *sql.DB) gin.HandlerFunc{
 		id, err := strconv.Atoi(idStr)
 		
 		if err !=nil{
-			fmt.Println("Error converting the id to an integer:", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id parameter"})
 			return
 		}
@@ -139,15 +135,14 @@ func GetUserByID(db *sql.DB) gin.HandlerFunc{
 
 func RedirectShortUrl(db *sql.DB) gin.HandlerFunc{
 	return func(c  *gin.Context){
-		alias := c.Param("alias") // When the user visits /google it will take them to google.com
+		alias := c.Param("alias")
 
 		if alias == "" {
-			fmt.Println("Alias is either incorrect or user didn't insert a alias")
 			c.JSON(http.StatusBadRequest, gin.H{"error":"Alias is required"})
 			return
 		}
 
-		query := `SELECT url, expires_at FROM WHERE alias =$1`
+		query := `SELECT url, expires_at FROM urls WHERE alias = $1`
 
 		var fullUrl string
 		var expiresAt sql.NullTime
@@ -158,7 +153,6 @@ func RedirectShortUrl(db *sql.DB) gin.HandlerFunc{
 				c.JSON(http.StatusNotFound, gin.H{"error":err})
 				return 
 			}else{
-				fmt.Println("Error with quering the db: ", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return 
 			}
@@ -168,8 +162,7 @@ func RedirectShortUrl(db *sql.DB) gin.HandlerFunc{
 			c.JSON(http.StatusGone, gin.H{"error":"This short URL has expired"})
 			return
 		}
-
-		c.Redirect(http.StatusTemporaryRedirect,fullUrl)
+		c.Redirect(http.StatusFound,fullUrl)
 		
 	}
 }
