@@ -10,13 +10,14 @@ import (
 func main(){
 	router := gin.New()
 	db:= db.ConnectDB()
+	defer db.Close()
 
 	router.POST("/create-url",api.PostCreateUrl(db))
 	router.POST("/create-user",api.PostCreateUser(db))
 	router.POST("/login",api.PostLogin(db))
 
-	router.GET("/urls",api.GetAllUrls(db))
-	router.GET("/urls/:id",api.GetUrlsByID(db))
+	router.GET("/getUrls",api.GetAllUrls(db))
+	router.GET("/getUrls/:id",api.GetUrlsByID(db))
 	router.GET("/users",api.GetAllUsers(db))
 	router.GET("/users/:id",api.GetUserByID(db))
 	router.GET("/urls/:alias", api.RedirectShortUrl(db))

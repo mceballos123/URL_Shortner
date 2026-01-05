@@ -88,6 +88,7 @@ func PostCreateUser(db *sql.DB) gin.HandlerFunc{ //Function type for HTTP routes
 
 		if err !=nil{
 			fmt.Println("Error executing query:", err)
+			fmt.Println("Error on line 91")
 			c.JSON(http.StatusBadRequest, gin.H{"error":err.Error()})
 			return 
 		}else{
